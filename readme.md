@@ -1,13 +1,16 @@
 Requires handlebars.js
 
-== Usage ==
+# Usage
+
     $(selector).multiple(options);
 
-== Element ==
+# Element
+
     <div data-multiple="template-id" data-counter="counter-identifier"></div>
     <script id="template-id" type="text/x-handlebars-template"></script>
  
-== Options ==
+# Options
+
 * addLinkText: Text to show on the add button
 * removeLinkText: Text to show on remove button
 * addLinkClass: Class to use for add link
