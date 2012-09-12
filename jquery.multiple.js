@@ -1,29 +1,46 @@
 /**
  * Requires handlebars.js
  *
- * Usage:
- * $(selector).multiple(options);
+ * # Usage:
+ *     $(selector).multiple(options);
  *
- * Element:
- * <div data-multiple="template-id" data-counter="counter-identifier"></div>
- * <script id="template-id" type="text/x-handlebars-template"></script>
- * 
+ * # Element:
+ *     <div data-multiple="template-id" data-counter="counter-identifier" data-options="json-encoded options"></div>
+ *     <script id="template-id" type="text/x-handlebars-template"></script>
+ *
  * Options:
  *	* addLinkText: Text to show on the add button
  *	* removeLinkText: Text to show on remove button
  *	* addLinkClass: Class to use for add link
  *	* removeLinkClass: Class to use for remove link
+ *	* maximum: Maximum entries allowed. Zero for no limit.
+ *	* minimum: Minimum number of entries allowed. Default is one
  */
 (function($){
-	var counters = {},
-			templates = {};
+	var
+		counters = {},
+		templates = {};
+
+	function checkRemoveLinks($parent, options) {
+		var numberItems = $parent.find('div.listItem').length;
+
+		if(numberItems > options.minimum) {
+			$parent.find('a.removeLink').show();
+		}
+
+		if(numberItems <= options.minimum) {
+			$parent.find('a.removeLink').hide();
+		}
+	}
 
 	$.fn.multiple = function() {
 		var defaults = {
 			'addLinkText': 'Add',
 			'removeLinkText': 'Remove',
 			'addLinkClass': 'button',
-			'removeLinkClass': 'button'
+			'removeLinkClass': 'button',
+			'maximum': 0,
+			'minimum': 1
 		};
 
 		if(this.length > 0) {
@@ -55,8 +72,13 @@
 				addDiv.appendTo($this);
 
 				addLink.on('click', function(e) {
+					var numberItems = $this.find('div.listItem').length;
 					e.preventDefault();
 					e.stopImmediatePropagation();
+
+					if(options.maximum > 0 && numberItems >= options.maximum) {
+						return;
+					}
 
 					var row = templates[templateId](counters);
 
@@ -82,23 +104,39 @@
 					$('[data-multiple]', row).multiple();
 
 					counters[counter]++;
+
+					checkRemoveLinks($this, options);
+
+					if(options.maximum > 0 && (numberItems+1) >= options.maximum) {
+						addDiv.slideUp('fast');
+					}
 				});
 			
-			$this.on('click', 'a.removeLink', function(e) {
+				$this.on('click', 'a.removeLink', function(e) {
 					e.preventDefault();
 
-					if($this.find('div.listItem').length == 1) {
+					if($this.find('div.listItem').length <= options.minimum) {
 						return;
 					}
 
+					addDiv.slideDown('fast');
+
 					$(this).closest('div.listItem').slideUp('fast', function() {
 						$(this).remove();
+
+						checkRemoveLinks($this, options);
 					});
 				});
 
-				if($this.children('div.listItem').length === 0) {
-					addLink.click();
+				if($this.find('div.listItem').length < options.minimum || options.minimum === 0) {
+					var i = 0;
+					do {
+						addLink.click();
+						i++;
+					} while(i < options.minimum);
 				}
+
+				checkRemoveLinks($this, options);
 			});
 		}
 		else {
