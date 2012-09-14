@@ -115,8 +115,8 @@
 					if(options.maximum > 0 && (numberItems+1) >= options.maximum) {
 						addDiv.slideUp('fast');
 					}
-
-					$this.trigger('addItem');
+					
+					$this.trigger('addItem', row);
 				});
 			
 				$this.on('click', 'a.removeLink', function(e) {
