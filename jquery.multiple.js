@@ -33,8 +33,24 @@
 		}
 	}
 
-	$.fn.multiple = function(createdOptions) {
-		var defaults = {
+	function addRemoveLink($element, options) {
+		var
+			removeLink = $('<a href="#" class="removeLink '+options.removeLinkClass + '">'+options.removeLinkText+'</a>');
+
+		if($element.find('.removeLink').length !== 0) {
+			return;
+		}
+
+		if($element.find('.removeWrapper').length !== 0) {
+			$element.find('.removeWrapper').empty().append(removeLink);
+			return;
+		}
+
+		$element.prepend($('<div class="removeWrapper"></div>').append(removeLink));
+	}
+
+	$.fn.multiple = function(options) {
+		var defaults = $.extend({
 			'addLinkText': 'Add',
 			'removeLinkText': 'Remove',
 			'addLinkClass': 'button',
@@ -43,15 +59,15 @@
 			'minimum': 1,
 			'wrappingElement': 'div',
 			'addDiv': null
-		};
+		}, options);
 
 		if(this.length > 0) {
 			return this.each(function() {
 				var
-					$this = $(this),
+					$this = $(this).addClass('multiple'),
 					templateId = $this.data('multiple'),
 					counter = $this.data('counter'),
-					options = $.extend({}, defaults, createdOptions, $this.data('options')),
+					options = $.extend({}, defaults, $this.data('options')),
 					addLink = $('<a href="#" class="addLink '+options.addLinkClass + '">'+options.addLinkText+'</a>'),
 					addDiv = null;
 
@@ -68,9 +84,9 @@
 					items = $('.listItem:data(counter='+counter+')');
 
 					items.each(function() {
-						if($(this).find('.removeLink').length === 0) {
-							$(this).prepend('<div class="removeWrapper"><a href="#" class="removeLink '+options.removeLinkClass + '">'+options.removeLinkText+'</a></div>');
-						}
+						var 
+							$this = $(this);
+						addRemoveLink($this, options);
 					});
 
 					counters[counter] = items.length;
@@ -99,9 +115,7 @@
 						row = $(row);
 					}
 
-					if(row.find('.removeLink').length === 0) {
-						row.prepend('<div class="removeWrapper"><a href="#" class="removeLink '+options.removeLinkClass + '">'+options.removeLinkText+'</a></div>');
-					}
+					addRemoveLink(row, options);
 
 					row
 						.hide()
