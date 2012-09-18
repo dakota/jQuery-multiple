@@ -18,19 +18,20 @@
  */
 (function($){
 	var
-		counters = {},
 		templates = {},
 		undoHistory = {};
 
 	function checkRemoveLinks($parent, options) {
-		var numberItems = $parent.find('.listItem').length;
+		var
+			$items = $parent.children('.listItem'),
+			numberItems = $items.length;
 
 		if(numberItems > options.minimum) {
-			$parent.find('a.removeLink').show();
+			$items.children('.removeWrapper').show();
 		}
 
 		if(numberItems <= options.minimum) {
-			$parent.find('a.removeLink').hide();
+			$items.children('.removeWrapper').hide();
 		}
 	}
 
@@ -38,12 +39,12 @@
 		var
 			removeLink = $('<a href="#" class="removeLink '+options.removeLinkClass + '">'+options.removeLinkText+'</a>');
 
-		if($element.find('.removeLink').length !== 0) {
+		if($element.children('.removeLink').length !== 0) {
 			return;
 		}
 
-		if($element.find('.removeWrapper').length !== 0) {
-			$element.find('.removeWrapper').empty().append(removeLink);
+		if($element.children('.removeWrapper').length !== 0) {
+			$element.children('.removeWrapper').empty().append(removeLink);
 			return;
 		}
 
@@ -62,19 +63,26 @@
 			'addDiv': null,
 			'hasUndo': true,
 			'undoLinkClass': 'button',
-			'undoLinkText': 'Undo last remove'
+			'undoLinkText': 'Undo last remove',
+			'templateVars': {}
 		}, options);
 
 		if(this.length > 0) {
 			return this.each(function() {
 				var
 					$this = $(this).addClass('multiple'),
-					templateId = $this.data('multiple'),
-					counter = $this.data('counter'),
 					options = $.extend({}, defaults, $this.data('options')),
+					templateId = $this.data('multiple'),
+					counterName = $this.data('counter'),
 					addLink = $('<a href="#" class="addLink '+options.addLinkClass + '">'+options.addLinkText+'</a>'),
 					undoLink = $('<a href="#" class="undoLink '+options.undoLinkClass + '">'+options.undoLinkText+'</a>').hide(),
-					addDiv = null;
+					addDiv = null,
+					counter = 0,
+					undoHistory = [],
+					template = Handlebars.compile($('#' + templateId).html()),
+					$existingItems = $this.children('.listItem');
+
+				options.counterName = counterName;
 
 				if(options.addDiv === null) {
 					addDiv = $('<div class="addWrapper"></div>')
@@ -91,29 +99,16 @@
 								.append(undoLink);
 				}
 					
-				if(typeof counters[counter] == 'undefined') {
-					items = $('.listItem:data(counter='+counter+')');
+				$existingItems.each(function() {
+					var
+						$this = $(this);
+					addRemoveLink($this, options);
+				});
 
-					items.each(function() {
-						var
-							$this = $(this);
-						addRemoveLink($this, options);
-					});
-
-					counters[counter] = items.length;
-				}
-
-				if(typeof undoHistory[counter] == 'undefined') {
-					undoHistory[counter] = [];
-				}
-
-				if(typeof templates[templateId] == 'undefined') {
-					templates[templateId] = Handlebars.compile($('#' + templateId).html());
-				}
-
+				counter = $existingItems.length;
 
 				addLink.on('click', function(e) {
-					var numberItems = $this.find('.listItem').length;
+					var numberItems = $this.children('.listItem').length;
 					e.preventDefault();
 					e.stopImmediatePropagation();
 
@@ -121,7 +116,10 @@
 						return;
 					}
 
-					var row = templates[templateId](counters);
+					var	templateVars = $.extend({}, options.templateVars);
+					templateVars[counterName] = counter;
+
+					var row = template(templateVars);
 
 					if(row.search('class="listItem"') === -1) {
 						row = $('<'+options.wrappingElement + ' class="listItem">'+row+'</'+options.wrappingElement + '>');
@@ -137,20 +135,24 @@
 						.appendTo($this)
 						.slideDown('fast');
 
-					counters[counter]++;
-
 					checkRemoveLinks($this, options);
 
 					if(options.maximum > 0 && (numberItems+1) >= options.maximum) {
 						addDiv.slideUp('fast');
 					}
 					
-					$this.trigger('addItem', row);
+					$this.trigger('addItem', {
+						row: row,
+						counterName: counterName,
+						counter: counter
+					});
+
+					counter++;
 				});
 
 				undoLink.on('click', function(e) {
 					e.preventDefault();
-					var row = undoHistory[counter]
+					var row = undoHistory
 						.pop()
 						.hide()
 						.appendTo($this)
@@ -168,14 +170,14 @@
 				$this.on('click', 'a.removeLink', function(e) {
 					e.preventDefault();
 
-					if($this.find('.listItem').length <= options.minimum) {
+					if($this.children('.listItem').length <= options.minimum) {
 						return;
 					}
 
 					addDiv.slideDown('fast');
 
 					$(this).closest('.listItem').slideUp('fast', function() {
-						undoHistory[counter].push($(this).remove());
+						undoHistory.push($(this).remove());
 						undoLink.fadeIn('fast');
 
 						checkRemoveLinks($this, options);
@@ -184,7 +186,7 @@
 					});
 				});
 
-				if($this.find('.listItem').length < options.minimum || options.minimum === 0) {
+				if($this.children('.listItem').length < options.minimum || options.minimum === 0) {
 					var i = 0;
 					do {
 						addLink.click();
