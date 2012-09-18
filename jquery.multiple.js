@@ -19,7 +19,8 @@
 (function($){
 	var
 		counters = {},
-		templates = {};
+		templates = {},
+		undoHistory = {};
 
 	function checkRemoveLinks($parent, options) {
 		var numberItems = $parent.find('.listItem').length;
@@ -58,7 +59,10 @@
 			'maximum': 0,
 			'minimum': 1,
 			'wrappingElement': 'div',
-			'addDiv': null
+			'addDiv': null,
+			'hasUndo': true,
+			'undoLinkClass': 'button',
+			'undoLinkText': 'Undo last remove'
 		}, options);
 
 		if(this.length > 0) {
@@ -69,27 +73,38 @@
 					counter = $this.data('counter'),
 					options = $.extend({}, defaults, $this.data('options')),
 					addLink = $('<a href="#" class="addLink '+options.addLinkClass + '">'+options.addLinkText+'</a>'),
+					undoLink = $('<a href="#" class="undoLink '+options.undoLinkClass + '">'+options.undoLinkText+'</a>').hide(),
 					addDiv = null;
 
 				if(options.addDiv === null) {
 					addDiv = $('<div class="addWrapper"></div>')
 								.append(addLink)
+								.append('&nbsp;')
+								.append(undoLink)
 								.insertAfter($this);
 				}
 				else {
-					addDiv = $(options.addDiv).empty().append(addLink);
+					addDiv = $(options.addDiv)
+								.empty()
+								.append(addLink)
+								.append('&nbsp;')
+								.append(undoLink);
 				}
 					
 				if(typeof counters[counter] == 'undefined') {
 					items = $('.listItem:data(counter='+counter+')');
 
 					items.each(function() {
-						var 
+						var
 							$this = $(this);
 						addRemoveLink($this, options);
 					});
 
 					counters[counter] = items.length;
+				}
+
+				if(typeof undoHistory[counter] == 'undefined') {
+					undoHistory[counter] = [];
 				}
 
 				if(typeof templates[templateId] == 'undefined') {
@@ -132,6 +147,23 @@
 					
 					$this.trigger('addItem', row);
 				});
+
+				undoLink.on('click', function(e) {
+					e.preventDefault();
+					var row = undoHistory[counter]
+						.pop()
+						.hide()
+						.appendTo($this)
+						.slideDown('fast');
+
+					if(undoHistory[counter].length === 0) {
+						undoLink.fadeOut('fast');
+					}
+
+					checkRemoveLinks($this, options);
+
+					$this.trigger('addItem', row);
+				});
 			
 				$this.on('click', 'a.removeLink', function(e) {
 					e.preventDefault();
@@ -143,7 +175,8 @@
 					addDiv.slideDown('fast');
 
 					$(this).closest('.listItem').slideUp('fast', function() {
-						$(this).remove();
+						undoHistory[counter].push($(this).remove());
+						undoLink.fadeIn('fast');
 
 						checkRemoveLinks($this, options);
 
