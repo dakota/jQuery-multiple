@@ -169,6 +169,7 @@
 			
 				$this.on('click', 'a.removeLink', function(e) {
 					e.preventDefault();
+					var row = $(this).closest('.listItem');
 
 					if($this.children('.listItem').length <= options.minimum) {
 						return;
@@ -176,13 +177,13 @@
 
 					addDiv.slideDown('fast');
 
-					$(this).closest('.listItem').slideUp('fast', function() {
+					row.slideUp('fast', function() {
 						undoHistory.push($(this).remove());
 						undoLink.fadeIn('fast');
 
+						$this.trigger('removeItem', row);
+						
 						checkRemoveLinks($this, options);
-
-						$this.trigger('removeItem');
 					});
 				});
 
