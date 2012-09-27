@@ -158,7 +158,7 @@
 						.appendTo($this)
 						.slideDown('fast');
 
-					if(undoHistory[counter].length === 0) {
+					if(undoHistory.length === 0) {
 						undoLink.fadeOut('fast');
 					}
 
