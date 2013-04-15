@@ -191,10 +191,10 @@
 
 				if($this.children('.listItem').length < options.minimum || options.minimum === 0) {
 					var i = 0;
-					do {
+					while(i < options.minimum) {
 						addLink.click();
 						i++;
-					} while(i < options.minimum);
+					};
 				}
 
 				checkRemoveLinks($this, options);
