@@ -132,15 +132,17 @@
 
 					row
 						.hide()
-						.appendTo($this)
-						.slideDown('fast');
+						.appendTo($this);
+
+					//Workaround for Bug in jQuery 1.9.1
+					$this.find('.listItem').last().slideDown('fast');
 
 					checkRemoveLinks($this, options);
 
 					if(options.maximum > 0 && (numberItems+1) >= options.maximum) {
 						addDiv.slideUp('fast');
 					}
-					
+
 					$this.trigger('addItem', {
 						row: row,
 						counterName: counterName,
